@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻情感分类系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: url("../static/a.png");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .container {
+            text-align: center;
+        }
+        .button {
+            display: inline-flex;
+            padding: 15px 30px;
+            margin: 50px;
+            font-size: 18px;
+            color: white;
+            background-color: rgb(156,178,255);
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            transform: translateY(-20px);
+        }
+        .button:hover {
+            background-color: rgb(91,150,255);
+        }
+        h1 {
+            font-size: 50px;
+            margin-bottom: 120px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="background: linear-gradient(to right, rgb(156,178,255), rgb(91,150,255));
+        background-clip: text;
+        color: transparent">
+            新 闻 情 感 分 类 系 统
+        </h1>
+        <a href="{% url 'news_list' 'SVM' %}" class="button">SVM模型</a>
+        <a href="{% url 'news_list' 'LSTM' %}" class="button">LSTM模型</a>
+    </div>
+</body>
+</html> 

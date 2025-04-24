@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ news.title }}</title>
+    <!-- 引入 ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- 引入词云图插件 -->
+<!--    <script src="../../../../static/js/echarts-wordcloud.min.js"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 80%;
+            margin: 0 auto;
+        }
+        .news-detail {
+            background-color: white;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex: 2;
+        }
+        .wordcloud-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex: 1;
+            min-height: 50px;
+            height: 60%;
+            position: relative;
+            flex-direction: column;
+        }
+        .news-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .news-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .news-content {
+            color: #333;
+            line-height: 1.8;
+            font-size: 16px;
+        }
+        .botton-backgroud{
+            background-color: rgb(8, 51, 110);
+            width: 100%;
+            height: 50px;
+            margin-bottom: 40px;
+        }
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-bottom: 40px;
+            background-color: rgb(8, 51, 110);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #3888C0;
+        }
+        .home-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 2px;
+            margin-bottom: 40px;
+            background-color: rgb(8, 51, 110);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            right: 40px;
+        }
+        .home-button:hover {
+            background-color: #3888C0;
+        }
+        #wordcloud {
+            width: 100%;
+            height: 400px;
+        }
+        .wordcloud-title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #333;
+            z-index: 1;
+        }
+        #sentiment-chart {
+            width: 100%;
+            height: 400px;
+            display: flex;
+            margin-top: 35px;
+            margin-bottom: 20px;
+        }
+        #relation-chart {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="botton-backgroud">
+        <a href="{% url 'home' %}" class="home-button">返回首页</a>
+        <a href="javascript:history.back()" class="back-button">返回列表</a>
+    </div>
+    <div class="container">
+        <div class="news-detail">
+            <h1 class="news-title">{{ news.title }}</h1>
+            <div class="news-meta">
+                <span>来源：{{ news.the_source }}</span>
+                <span style="margin: 0 10px;">|</span>
+                <span>发布时间：{{ news.pub_date }}</span>
+            </div>
+            <div class="news-content">
+                {{ news.content|linebreaks }}
+            </div>
+        </div>
+        <!---图表--->
+        <div class="wordcloud-container">
+            <div class="wordcloud-title">关键词</div>
+            <div id="wordcloud"></div>
+            <div id="relation-chart"></div>
+            <!--情感分析-->
+            <div id="sentiment-chart"></div>
+         </div>
+        </div>
+    </div>
+
+<!---词云图--->
+   <script>
+        // 初始化词云图
+        var chart_cloud = echarts.init(document.getElementById('wordcloud'));
+
+        // 词云数据（从后端传递）
+        var words = {{ word_frequencies|safe }};
+        var colors =[
+            '#08336E', '#105CA4','#3888C0',
+            '#68ACD5', '#AACFE5','#D2E3F3',
+        ]
+        // 为每个词分配颜色
+        var processWords = words.map(function(item, index) {
+            return{
+                name: item.name,
+                value: item.value,
+                color: colors[index % colors.length]
+            }
+        });
+
+        // 配置项
+        var option = {
+            tooltip: {
+                show: true,
+                formatter: function(params) {
+                    return params.data.name + ': ' + params.data.value;
+                }
+            },
+            series: [{
+                type: 'wordCloud',
+                shape: 'circle',
+                left: 'center',
+                top: 'center',
+                width: '90%',
+                height: '90%',
+                right: null,
+                bottom: null,
+                sizeRange: [12, 50],
+                rotationRange: [-45, 45],
+                rotationStep: 5,
+                gridSize: 8,
+                drawOutOfBound: false,
+                layoutAnimation: true,
+                textStyle: {
+                    fontFamily: 'sans-serif',
+                    fontWeight: 'bold',
+                    color: function() {
+                        return colors[Math.floor(Math.random() * colors.length)];
+                    }
+                },
+                emphasis: {
+                    focus: 'self',
+                    textStyle: {
+                        shadowBlur: 10,
+                        shadowColor: '#333'
+                    }
+                },
+                data: processWords
+            }]
+        };
+
+        // 使用配置项显示词云
+        chart_cloud.setOption(option);
+
+        // 添加窗口大小改变时的自适应
+        window.addEventListener('resize', function() {
+            chart_cloud.resize();
+        });
+
+        // 实现动画效果
+        let currentIndex = 0;
+        const animationInterval = setInterval(() => {
+            if (currentIndex >= words.length) {
+                clearInterval(animationInterval);
+                chart_cloud.setOption(option);
+                return;
+            }
+
+            const animationData = words.slice(0, currentIndex + 1)
+                .sort((a, b) => b.value - a.value);  // 按词频排序
+            chart_cloud.setOption({
+                series: [{
+                    data: animationData
+                }]
+            });
+            currentIndex++;
+        }, 100);
+    </script>
+    <!---情感分析图--->
+    <script>
+        // 初始化情感分析图表
+        var sentimentChart = echarts.init(document.getElementById('sentiment-chart'));
+
+        // 获取情感分析数据
+        var sentimentData = {{ sentiment_data|safe }};
+
+        // 配置项
+        var sentiment_option = {
+            title: {
+                text: '新闻情感分布',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: Object.keys(sentimentData),
+                axisTick: {
+                    alignWithLabel: true
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '数量'
+            },
+            series: [{
+                name: '情感分布',
+                type: 'bar',
+                barWidth: '60%',
+                data: Object.values(sentimentData),
+                itemStyle: {
+                    color: function(params) {
+                        // 直方柱颜色
+                        return params.name === '正面'  ? '#D2E3F3' : params.name === '中性' ? '#68ACD5' : '#08336E';
+                    }
+                }
+            }]
+        };
+
+        // 使用配置项显示图表
+        sentimentChart.setOption(sentiment_option);
+
+        // 添加窗口大小改变时的自适应
+        window.addEventListener('resize', function() {
+            sentimentChart.resize();
+        });
+    </script>
+    <!---关系网络图--->
+    <script>
+        // 初始化关系网络图
+        var relationChart = echarts.init(document.getElementById('relation-chart'));
+        
+        // 获取关系数据
+        var relationData = {{ relation_data|safe }};
+
+        // 提取所有节点
+        var nodes = new Set();
+        relationData.forEach(function(link) {
+            nodes.add(link.source);
+            nodes.add(link.target);
+        });
+        
+        // 转换为节点数组
+        var nodesArray = Array.from(nodes).map(function(name) {
+            return {
+                name: name,
+                symbolSize: 20,
+                itemStyle: {
+                    color: '#08336E'
+                }
+            };
+        });
+        
+        // 配置项
+        var relationOption = {
+            title: {
+                text: '文章语义关联度',
+                left: 'center'
+            },
+            tooltip: {},
+            animationDurationUpdate: 1500,
+            animationEasingUpdate: 'quinticInOut',
+            series: [{
+                type: 'graph',
+                layout: 'force',
+                data: nodesArray,
+                links: relationData,
+                categories: [],
+                roam: true,
+                label: {
+                    show: true,
+                    position: 'right'
+                },
+                force: {
+                    repulsion: 100,
+                    edgeLength: 100
+                },
+                lineStyle: {
+                    color: '#3888C0',
+                    curveness: 0.3
+                }
+            }]
+        };
+        
+        // 使用配置项显示图表
+        relationChart.setOption(relationOption);
+        
+        // 添加窗口大小改变时的自适应
+        window.addEventListener('resize', function() {
+            relationChart.resize();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今日新闻</title>
+    <!-- 引入jQuery -->
+    <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
+    <!-- 引入 ECharts -->
+    <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+            background-image: url("../static/list1.png");
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+        .title{
+            margin-left: 15%;
+            color: rgb(8, 51, 110);
+            font-size: 60px;
+            font-family: '微软雅黑';
+            margin-bottom: 20px;
+        }
+        .news-container {
+            display: flex;
+            gap:20px;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .news-list {
+            flex: 1;
+            max-width: 800px;
+        }
+        .chart-container {
+            background-color: white;
+            padding: 20px;
+            width: 300px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+        .sentiment-chart {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+        }
+        .map-chart {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+        .news-item {
+            background-color: white;
+            width: 100%;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .news-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+            text-decoration: none;
+        }
+        .news-title:hover {
+            color: #3888C0;
+        }
+        .news-source {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .news-content {
+            color: #666;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .news-date {
+            color: #999;
+            font-size: 14px;
+        }
+         .botton-backgroud{
+            background-color: #508BD0;
+            width: 100%;
+            height: 50px;
+            margin-bottom: 10px;
+        }
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            background-color: #508BD0;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #5594DE;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            padding: 8px 16px;
+            margin: 0 4px;
+            text-decoration: none;
+            color: #105CA4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .pagination a.active {
+            background-color: #105CA4;
+            color: white;
+            border: 1px solid #68ACD5;
+        }
+        .current {
+            margin: 10px;
+            text-align: center;
+        }
+        .pagination a:hover:not(.active) {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="botton-backgroud">
+        <a href="{% url 'home' %}" class="back-button">返回首页</a>
+    </div>
+    <h2 class="title">今日新闻</h2>
+    <div class="news-container">
+        <div class="news-list">
+            {% for news in news_list %}
+            <div class="news-item">
+                <a href="{% url 'news_detail' model_type news.id %}" class="news-title">{{ news.title }}</a>
+                <div class="news-source">来源：{{ news.the_source }}</div>
+                <div class="news-content">{{ news.content }}</div>
+                <div class="news-date">发布时间：{{ news.pub_date }}</div>
+            </div>
+            {% empty %}
+            <p>暂无新闻</p>
+            {% endfor %}
+        </div>
+
+        <div class="chart-container">
+            <div id="sentiment-chart" class="sentiment-chart"></div>
+            <div id="map-chart" class="map-chart"></div>
+        </div>
+    </div>
+
+    <div class="pagination">
+        {% if current_page > 1 %}
+            <a href="?page=1">&laquo; 首页</a>
+            <a href="?page={{ current_page|add:'-1' }}">上一页</a>
+        {% endif %}
+
+        <span class="current">
+            第 {{ current_page }} 页，共 {{ total_pages }} 页
+        </span>
+
+        {% if current_page < total_pages %}
+            <a href="?page={{ current_page|add:'1' }}">下一页</a>
+            <a href="?page={{ total_pages }}">末页 &raquo;</a>
+        {% endif %}
+    </div>
+
+    <script>
+        // 初始化情感分析图表
+        var sentimentChart = echarts.init(document.getElementById('sentiment-chart'));
+        
+        // 获取情感分析数据
+        var sentimentData = {{ sentiment_data|safe }};
+        var modelType = "{{ model_type }}";
+        
+        // 配置项
+        var option = {
+            title: {
+                text: modelType + '今日新闻情感',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: Object.keys(sentimentData),
+                axisTick: {
+                    alignWithLabel: true
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: '数量'
+            },
+            series: [{
+                name: '情感分布',
+                type: 'bar',
+                barWidth: '60%',
+                data: Object.values(sentimentData),
+                itemStyle: {
+                    color: function(params) {
+                        // 直方柱颜色
+                        return params.name === '正面'  ? '#D2E3F3' : params.name === '中性' ? '#68ACD5' : '#08336E';
+                    }
+                }
+            }]
+        };
+
+        // 使用配置项显示图表
+        sentimentChart.setOption(option);
+        
+        // 添加窗口大小改变时的自适应
+        window.addEventListener('resize', function() {
+            sentimentChart.resize();
+        });
+    </script>
+
+    <script>
+        // 初始化地图热力图
+        var mapChart = echarts.init(document.getElementById('map-chart'));
+        
+        // 获取地图数据
+        var mapData = {{ map_data|safe }};
+        
+        // 加载地图JSON
+        fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+            .then(response => response.json())
+            .then(geoJson => {
+                echarts.registerMap('china', geoJson);
+                
+                // 配置项
+                var mapOption = {
+                    title: {
+                        text: '新闻发布地区分布',
+                        left: 'center',
+                        textStyle: {
+                            fontSize: 16
+                        }
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: function(params) {
+                            return params.name + ': ' + params.value + ' 条新闻';
+                        }
+                    },
+                    visualMap: {
+                        min: 0,
+                        max: Math.max(...mapData.map(item => item.value)),
+                        left: 'left',
+                        top: 'bottom',
+                        text: ['多', '少'],
+                        calculable: true,
+                        inRange: {
+                            color: ['#D2E3F3', '#105CA4']
+                        }
+                    },
+                    series: [{
+                        name: '新闻数量',
+                        type: 'map',
+                        map: 'china',
+                        roam: true,
+                        zoom: 1.2,
+                        itemStyle:{
+                            areaColor: '#F4F9FE',
+                        },
+                        label: {
+                            show: true,
+                            fontSize: 10,
+                            formatter: function(params) {
+                                return params.name;
+                            }
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 12
+                            },
+                            itemStyle: {
+                                areaColor: '#3888C0'
+                            }
+                        },
+                        data: mapData
+                    }]
+                };
+                
+                // 使用配置项显示地图
+                mapChart.setOption(mapOption);
+            })
+            .catch(error => console.error('Error loading map data:', error));
+        
+        // 添加窗口大小改变时的自适应
+        window.addEventListener('resize', function() {
+            mapChart.resize();
+        });
+    </script>
+</body>
+</html> 
