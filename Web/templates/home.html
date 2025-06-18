@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻情感分类系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: url("../static/a.png");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .container {
+            text-align: center;
+            background: linear-gradient(to right, 
+                rgba(255, 255, 255, 0.2), 
+                rgba(255, 255, 255, 0.8));
+            padding: 60px 80px;
+            min-width: 800px;
+            min-height: 500px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .button {
+            display: inline-flex;
+            padding: 15px 30px;
+            margin: 20px;
+            font-size: 18px;
+            color: white;
+            background-color: rgb(156,178,255);
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: rgb(91,150,255);
+        }
+        .button-container {
+            margin-top: auto;
+            align-self: flex-end;
+            transform: translateY(15%);
+        }
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 40px;
+            align-self: flex-end;
+            transform: translateY(5%);
+        }
+        .stat-box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 50px 75px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            min-width: 200px;
+        }
+        .stat-title {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .stat-number {
+            font-size: 32px;
+            color: rgb(91,150,255);
+            font-weight: bold;
+        }
+        h1 {
+            font-size: 48px;
+            margin: 0;
+            align-self: center;
+            margin-bottom: 40px;
+            position: absolute;
+            left: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            text-orientation: upright;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="background: linear-gradient(to right, rgb(156,178,255), rgb(91,150,255));
+        background-clip: text;
+        color: transparent;">
+            新闻情感分类系统
+        </h1>
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-title">数据库总新闻量</div>
+                <div class="stat-number">{{ total_news_count }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">今日获取新闻量</div>
+                <div class="stat-number">{{ today_news_count }}</div> 
+            </div>
+        </div>
+        <div class="button-container">
+            <a href="{% url 'news_list' 'SVM' %}" class="button">SVM模型</a>
+            <a href="{% url 'news_list' 'LSTM' %}" class="button">LSTM模型</a>
+        </div>
+    </div>
+</body>
+</html> 
